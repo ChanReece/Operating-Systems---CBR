@@ -23,8 +23,19 @@ BENSCHILLIBOWL *bcb;
  *  - add their order to the restaurant.
  */
 void* BENSCHILLIBOWLCustomer(void* tid) {
-    int customer_id = (int)(long) tid;
-	return NULL;
+  int customer_id = (int)(long) tid;
+  
+  for (int i = 0; i < ORDERS_PER_CUSTOMER; i++) {
+    Order* order = (Order*) malloc(sizeof(Order));
+    MenuItem menu_item = PickRandomMenuItem();
+    
+    order->customer_id = customer_id;
+    order->menu_item = menu_item;
+    order->next = NULL;
+    int order_number = AddOrder(bcb, order);
+    printf("Order #%d added by Customer #%d.\n", order_number, customer_id);
+  }
+  return NULL;
 }
 
 /**
@@ -36,9 +47,18 @@ void* BENSCHILLIBOWLCustomer(void* tid) {
  * receive an order.
  */
 void* BENSCHILLIBOWLCook(void* tid) {
-    int cook_id = (int)(long) tid;
+  int cook_id = (int)(long) tid;
 	int orders_fulfilled = 0;
-	printf("Cook #%d fulfilled %d orders\n", cook_id, orders_fulfilled);
+  
+  Order* order = GetOrder(bcb);
+  // Keep getting orders until no more is left.
+  while (order != NULL) {
+    free(order);
+    orders_fulfilled += 1;
+    order = GetOrder(bcb);
+  }
+  
+	printf("%d orders made by Cook #%d\n", orders_fulfilled, cook_id);
 	return NULL;
 }
 
@@ -50,5 +70,33 @@ void* BENSCHILLIBOWLCook(void* tid) {
  *  - close the restaurant.
  */
 int main() {
-    return 0;
+  bcb = OpenRestaurant(BENSCHILLIBOWL_SIZE, EXPECTED_NUM_ORDERS);
+  
+  pthread_t customers[NUM_CUSTOMERS];
+  pthread_t cooks[NUM_COOKS];
+  int customer_ids[NUM_CUSTOMERS];
+  int cook_ids[NUM_COOKS];
+  
+  for (int i = 0; i < NUM_CUSTOMERS; i++) {
+    customer_ids[i] = i+1;
+    pthread_create(&(customers[i]), NULL, BENSCHILLIBOWLCustomer, &(customer_ids[i]));
+  }
+  
+  for (int j = 0; j < NUM_COOKS; j++) {
+    cook_ids[j] = j+1;
+    pthread_create(&(cooks[j]), NULL, BENSCHILLIBOWLCook, &(cook_ids[j]));
+  }
+  for (int i = 0; i < NUM_CUSTOMERS; i++) {
+    printf("Waiting for customer %d\n", i+1);
+    pthread_join(customers[i], NULL);
+  }
+  
+  for (int j = 0; j < NUM_COOKS; j++) {
+    printf("Waiting for cook %d\n", j+1);
+    pthread_join(cooks[j], NULL);
+  }
+  
+  CloseRestaurant(bcb);
+  
+  return 0;
 }

@@ -1,8 +1,9 @@
 #include <stdio.h>
 
+
+#include <assert.h>
 #include "list.h"
 
 int main() {
-  printf("Tests for linked list implementation\n");
-  return 0;
+ printf("Tests for linked list implementation\n");
 }

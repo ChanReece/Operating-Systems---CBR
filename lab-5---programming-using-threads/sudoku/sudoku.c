@@ -36,22 +36,92 @@ void printBoard(int board[SIZE][SIZE]) {
 // Checks the given row for duplicate numbers, and updates the row_check
 // value for that row appropriately. If no number is repeated in that row,
 // row_check[row] will be set to true; otherwise, it will be false.
-void* checkRow(void* args) {
-    return NULL;
+void *checkRow(void *args)
+{
+    int occurance[SIZE];
+    int i = 0;
+    for (i = 0; i < SIZE; i++)
+    {
+        occurance[i] = 0;
+    }
+    int row = *((int *)args);
+
+    for (i = 0; i < SIZE; i++)
+    {
+        occurance[board[i][row] - 1] += 1;
+    }
+
+    row_check[row] = true;
+    for (i = 0; i < SIZE; i++)
+    {
+        if (occurance[i] != 1)
+        {
+            row_check[row] = false;
+        }
+    }
 }
 
 // Checks the given col for duplicate numbers, and updates the col_check
 // value for that col appropriately. If no number is repeated in that col,
 // col_check[col] will be set to true; otherwise, it will be false.
-void* checkCol(void* args) {
-    return NULL;
+void *checkCol(void *args)
+{
+    int occurance[SIZE];
+    int i = 0;
+    for (i = 0; i < SIZE; i++)
+    {
+        occurance[i] = 0;
+    }
+    int col = *((int *)args);
+
+    for (i = 0; i < SIZE; i++)
+    {
+        occurance[board[col][i] - 1] += 1;
+    }
+
+    col_check[col] = true;
+    for (i = 0; i < SIZE; i++)
+    {
+        if (occurance[i] != 1)
+        {
+            col_check[col] = false;
+        }
+    }
 }
 
 // Checks the given 3x3 box for duplicate numbers, and updates the box_check
 // value for that box appropriately. If no number is repeated in that box,
 // box_check[box] will be set to true; otherwise, it will be false.
-void* checkBox(void* args) {
-    return NULL;
+void *checkBox(void *args)
+{
+    int occurance[SIZE];
+    int i = 0;
+    for (i = 0; i < SIZE; i++)
+    {
+        occurance[i] = 0;
+    }
+    int box = *((int *)args);
+    int j = 0;
+    int x = (box / 3) * 3;
+    int y = (box % 3) * 3;
+
+    for (int i = 0; i < 3; i++)
+    {
+
+        for (int j = 0; j < 3; j++)
+        {
+            occurance[board[i + x][j + y] - 1] += 1;
+        }
+    }
+
+    box_check[box] = true;
+    for (i = 0; i < SIZE; i++)
+    {
+        if (occurance[i] != 1)
+        {
+            box_check[box] = false;
+        }
+    }
 }
 
 // Spawn a thread to fill each cell in each result matrix.
@@ -62,11 +132,34 @@ int main() {
     printBoard(board);
     
     // 2. Create pthread_t objects for our threads.
+    pthread_t rowThreads[SIZE];
+    pthread_t colThreads[SIZE];
+    pthread_t boxThreads[SIZE];
+    int i = 0;
+
+   
+   
     
     // 3. Create a thread for each cell of each matrix operation.
-    
+     for (i = 0; i < SIZE; i++)
+    {
+        int *a = malloc(sizeof(int));
+        int *b = malloc(sizeof(int));
+        int *c = malloc(sizeof(int));
+        *a = i;
+        *b = i;
+        *c = i;
+        pthread_create(&rowThreads[i], NULL, checkRow, a);
+        pthread_create(&colThreads[i], NULL, checkCol, b);
+        pthread_create(&boxThreads[i], NULL, checkBox, c);
+    }
     // 4. Wait for all threads to finish.
-    
+     for (i = 0; i < SIZE; i++)
+    {
+        pthread_join(rowThreads[i], NULL);
+        pthread_join(colThreads[i], NULL);
+        pthread_join(boxThreads[i], NULL);
+    }
     // 5. Print the results.
     printf("Results:\n");
     bool all_rows_passed = true;

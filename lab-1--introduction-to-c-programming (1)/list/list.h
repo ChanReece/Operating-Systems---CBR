@@ -31,7 +31,6 @@ typedef struct list list_t;
  * this linked list library. */
 list_t *list_alloc();
 void list_free(list_t *l);
-void node_free(node_t *n);
 
 /* Prints the list in some format. */
 void list_print(list_t *l);

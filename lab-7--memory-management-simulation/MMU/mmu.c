@@ -4,6 +4,7 @@
 #include <string.h>
 #include "list.h"
 #include "util.h"
+//Chandler Bursey-Reece
 
 void TOUPPER(char * arr){
   
@@ -63,6 +64,53 @@ void allocate_memory(list_t * freelist, list_t * alloclist, int pid, int blocksi
     *     d. set the fragment->end = original blk.end before you changed it in #4
     *     e. add the fragment to the FREE_LIST based on policy
     */
+    node_t* node = NULL;
+  
+    node_t* current = freelist->head;
+    node_t* prev = NULL;
+    
+    while (current != NULL) {
+        if (current->blk->end - current->blk->start >= blocksize) {
+        node = current;
+        break;
+        }
+        
+        prev = current;
+        current = current->next;
+    }
+  
+    if (node == NULL) {
+        printf("Error: Memory Allocation %d blocks\n", blocksize);
+        return;
+    } else {
+        if (prev == NULL) {
+        freelist->head = freelist->head->next;
+        } else {
+        prev->next = node->next;
+        }
+    }
+  
+    int original_end = node->blk->end;
+    node->blk->pid = pid;
+    node->blk->end = node->blk->start + blocksize - 1;
+    
+    list_add_ascending_by_address(alloclist, node->blk);
+    
+    if (node->blk->end != original_end) {
+        block_t* fragment = (block_t*) malloc(sizeof(block_t));
+        
+        fragment->pid = 0;
+        fragment->start = node->blk->end + 1;
+        fragment->end = original_end;
+        
+        if (policy == 1) {
+        list_add_to_back(freelist, fragment);
+        } else if (policy == 2) {
+        list_add_ascending_by_blocksize(freelist, fragment);
+        } else if (policy == 3) {
+        list_add_descending_by_blocksize(freelist, fragment);
+        }
+    }
 }
 
 void deallocate_memory(list_t * alloclist, list_t * freelist, int pid, int policy) { 
@@ -80,6 +128,45 @@ void deallocate_memory(list_t * alloclist, list_t * freelist, int pid, int polic
     * 3. set the blk.pid back to 0
     * 4. add the blk back to the FREE_LIST based on policy.
     */
+
+
+node_t* current = alloclist->head;
+  node_t* prev = NULL;
+  
+  while (current != NULL) {
+    if (current->blk->pid == pid) {
+      break;
+    }
+    
+    prev = current;
+    current = current->next;
+  }
+  
+  block_t* to_delete_block = NULL;
+  if (current == NULL) {
+    printf("Error: Can't locate Memory Used by PID: %d\n", pid);
+    return;
+  } else {
+    if (prev == NULL) {
+      alloclist->head = alloclist->head->next;
+    } else {
+      prev->next = current->next;
+    }
+    
+    to_delete_block = current->blk;
+    to_delete_block->pid = 0;
+    
+    if (policy == 1) {
+      list_add_to_back(freelist, to_delete_block);
+    } else if (policy == 2) {
+      list_add_ascending_by_blocksize(freelist, to_delete_block);
+    } else if (policy == 3) {
+      list_add_descending_by_blocksize(freelist, to_delete_block);
+    }
+  }
+  
+  
+  
 }
 
 list_t* coalese_memory(list_t * list){

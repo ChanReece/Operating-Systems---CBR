@@ -6,7 +6,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+void  ParentProcess(int []);
 void  ClientProcess(int []);
+void  depositMoney(int []);
+int childIterations;
+int parentIterations;
 
 int  main(int  argc, char *argv[])
 {
@@ -14,6 +18,8 @@ int  main(int  argc, char *argv[])
      int    *ShmPTR;
      pid_t  pid;
      int    status;
+     int bankAccount = 0;
+     int turn = 0;
 
      if (argc != 5) {
           printf("Use: %s #1 #2 #3 #4\n", argv[0]);
@@ -33,24 +39,34 @@ int  main(int  argc, char *argv[])
           exit(1);
      }
      printf("Server has attached the shared memory...\n");
+     
+     ShmPTR[0] = bankAccount;
+     ShmPTR[1] = turn;
 
-     ShmPTR[0] = atoi(argv[1]);
-     ShmPTR[1] = atoi(argv[2]);
-     ShmPTR[2] = atoi(argv[3]);
-     ShmPTR[3] = atoi(argv[4]);
-     printf("Server has filled %d %d %d %d in shared memory...\n",
-            ShmPTR[0], ShmPTR[1], ShmPTR[2], ShmPTR[3]);
+     printf("Original Bank Account Amount = %d\n", ShmPTR[0]);
 
-     printf("Server is about to fork a child process...\n");
      pid = fork();
-     if (pid < 0) {
-          printf("*** fork error (server) ***\n");
-          exit(1);
-     }
-     else if (pid == 0) {
-          ClientProcess(ShmPTR);
-          exit(0);
-     }
+
+    if (pid < 0) {
+        printf("*** fork error (server) ***\n");
+        exit(1);
+    }
+    else if (pid == 0) {
+      for (int j = 0 ; j < 25  ; j ++){
+        sleep(rand() % 6);
+        ClientProcess(ShmPTR);
+      }
+      exit(0);
+    }
+
+  else{
+    // parent process
+    for (int i = 0; i < 25 ;  i ++ ){
+
+    sleep(rand() % 6);
+    ParentProcess(ShmPTR);
+  }
+  }
 
      wait(&status);
      printf("Server has detected the completion of its child...\n");
@@ -61,11 +77,47 @@ int  main(int  argc, char *argv[])
      printf("Server exits...\n");
      exit(0);
 }
+void ParentProcess(int SharedMem[]){
+   
+    int account = SharedMem[0]; 
+    while (SharedMem[1] != 0){ 
+    }
+    if (account <= 100){
+          depositMoney(SharedMem);
+        }
+        else{
+          printf("Dear old Dad: Thinks Student has enough Cash ($%d)\n", account);
+          SharedMem[1] = 1;
+        }
+}
+void  ClientProcess(int  SharedMem[]){  
+    int account = SharedMem[0]; 
+    while (SharedMem[1] != 1){
+    }
+    int amountStudentNeed = rand() % 51; 
+    printf("Poor Student needs $%d\n", amountStudentNeed);
 
-void  ClientProcess(int  SharedMem[])
-{
-     printf("   Client process started\n");
-     printf("   Client found %d %d %d %d in shared memory\n",
-                SharedMem[0], SharedMem[1], SharedMem[2], SharedMem[3]);
-     printf("   Client is about to exit\n");
+    if (amountStudentNeed <= account){
+      account -= amountStudentNeed; 
+      printf("Poor Student: Withdraws $%d / Account Balance = $%d\n", amountStudentNeed, account);
+      }
+    else{
+      printf("Poor Student: Not Enough Cash ($%d)\n", account );
+    }
+    SharedMem[0] = account;
+    SharedMem[1] = 0; 
+}
+void  depositMoney(int  SharedMem[]){
+  int account = SharedMem[0];
+  int depositAmount = rand() % 101; 
+  if (depositAmount % 2 == 0) { //even
+
+    account += depositAmount; 
+    printf("Dear old Dad: Deposits $%d / Account Balance = $%d\n", depositAmount, account);
+  }
+  else{ //odd
+    printf("Dear old Dad: Doesn't have any money to give\n");
+  }
+  SharedMem[0] = account; 
+  SharedMem[1] = 1; 
 }

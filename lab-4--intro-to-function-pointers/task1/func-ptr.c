@@ -25,11 +25,24 @@ typedef int (*Comparer) (const void *a, const void *b);
 int my_comparer(const void *this, const void *that)
 {
 	//TODO: IMPLEMENT ME!
+	int first = *(((int*)this + 2) );
+	int second = *(((int*)that + 2) );
+	return (second - first);
 	return 0;
+}
+
+int my_comparer_two(const void *this, const void *that)
+{
+	int first = *(((int*)this + 1) );
+	int second = *(((int*)that + 1) );
+	return (first - second);
 }
 
 int main(int argc, char *argv[])
 {
+	  int count = 0;
+		int x = 0;
+		for (x=0 ; x<2; x++){
 
 	if (argc < 2) {
 		   fprintf(stderr, "Usage: ./func-ptr <input-file-path>\n");
@@ -53,6 +66,15 @@ int main(int argc, char *argv[])
 	/* sort the input  */
 	/*******************/
 	Comparer process_comparer = &my_comparer;
+
+	if (count == 0) {
+			printf("\nSorted by Priority\n");
+			process_comparer = &my_comparer;
+		
+ } else {
+			printf("\nSorted by Arrival Time\n");
+			process_comparer = &my_comparer_two;
+		}
 
 #if DEBUG
 	for (int i = 0; i < P_SIZE; i++) {
